@@ -8,7 +8,7 @@ from world.data import BIO, get_trait_list, SPLATS, PHYSICAL, MENTAL, SOCIAL, SK
 from evennia.utils.ansi import ANSIString
 from .utils import target, format
 from jobs.commands.commands import CmdJob
-
+from commands.command_sets import VampireCommandSet 
 
 class cmdSplat(MuxCommand):
     """
@@ -68,7 +68,11 @@ class cmdSplat(MuxCommand):
         # set the splat
         target.db.stats["splat"] = splat.lower()
         target.db.stats["bio"] = {"splat": splat.lower()}
-
+        
+        if splat.lower() == "vampire":  # Adjust the string if your SPLATS uses a different identifier for vampires
+            target.cmdset.add(VampireCommandSet, permanent=True)
+            target.tags.add("vampire", category="splat")
+            
         self.caller.msg(
             "|wSPLAT>|n |c{}'s|n splat has set to |w{}|n.".format(target.get_display_name(self.caller), target.db.stats["splat"].upper()))
 
