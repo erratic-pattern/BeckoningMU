@@ -24,7 +24,7 @@ from .notes import cmdNotes, CmdNoteApprove, CmdNoteProve
 from .dice import dice
 from evennia.contrib.game_systems.multidescer import CmdMultiDesc 
 from evennia import CmdSet
-from commands.command_definitions import CmdSetStatus, CmdCheckStatus, CmdSetAge, CmdSetTitle, CmdGrantStatusPoints, CmdAdjustStatus, CmdStatusBoard
+from commands.vampstatus import CmdSetStatus, CmdCheckStatus, CmdSetAge, CmdSetTitle, CmdGrantStatusPoints, CmdAdjustStatus, CmdStatusBoard
 
 class VampireCommandSet(CmdSet):
     key = "VampireCommandSet"
