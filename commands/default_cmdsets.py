@@ -37,6 +37,8 @@ class VampireCommandSet(CmdSet):
         self.add(CmdGrantStatusPoints())
         self.add(CmdAdjustStatus())
         self.add(CmdStatusBoard())
+        self.add(CmdRouse())
+        self.add(CmdSlake())
 
 class CharacterCmdSet(default_cmds.CharacterCmdSet):
     """
@@ -72,8 +74,6 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(CmdNoteApprove())
         self.add(CmdNoteProve())
         self.add(dice())
-        self.add(CmdRouse())
-        self.add(CmdSlake())
         self.add(CmdMultiDesc())
 
 class AccountCmdSet(default_cmds.AccountCmdSet):
