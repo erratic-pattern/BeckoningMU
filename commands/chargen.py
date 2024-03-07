@@ -8,7 +8,7 @@ from world.data import BIO, get_trait_list, SPLATS, PHYSICAL, MENTAL, SOCIAL, SK
 from evennia.utils.ansi import ANSIString
 from .utils import target, format
 from jobs.commands.commands import CmdJob
-from commands.default_cmdsets import VampireCommandSet 
+from vampstatus.vampcmdset import VampireCommandSet 
 
 class cmdSplat(MuxCommand):
     """
