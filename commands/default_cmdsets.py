@@ -23,6 +23,20 @@ from bbs.CmdSet import CmdSet as CmdBBS
 from .notes import cmdNotes, CmdNoteApprove, CmdNoteProve
 from .dice import dice
 from evennia.contrib.game_systems.multidescer import CmdMultiDesc 
+from evennia import CmdSet
+from commands.command_definitions import CmdSetStatus, CmdCheckStatus, CmdSetAge, CmdSetTitle, CmdGrantStatusPoints, CmdAdjustStatus, CmdStatusBoard
+
+class VampireCommandSet(CmdSet):
+    key = "VampireCommandSet"
+
+    def at_cmdset_creation(self):
+        self.add(CmdSetStatus())
+        self.add(CmdCheckStatus())
+        self.add(CmdSetAge())
+        self.add(CmdSetTitle())
+        self.add(CmdGrantStatusPoints())
+        self.add(CmdAdjustStatus())
+        self.add(CmdStatusBoard())
 
 class CharacterCmdSet(default_cmds.CharacterCmdSet):
     """
