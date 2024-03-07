@@ -72,6 +72,9 @@ class cmdSplat(MuxCommand):
         if splat.lower() == "vampire":  # Adjust the string if your SPLATS uses a different identifier for vampires
             target.cmdset.add(VampireCommandSet, permanent=True)
             target.tags.add("vampire", category="splat")
+            target.db.camarilla_status = 0  # Default status
+            target.db.status_points = 0    # Default status points
+            target.db.age = "Fledgling"    # Default age for a new vampire
             
         self.caller.msg(
             "|wSPLAT>|n |c{}'s|n splat has set to |w{}|n.".format(target.get_display_name(self.caller), target.db.stats["splat"].upper()))
