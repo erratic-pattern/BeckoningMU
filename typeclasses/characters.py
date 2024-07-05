@@ -40,6 +40,46 @@ class Character(ObjectParent, DefaultCharacter):
         # initialize attributes
         self.db.stats = STATS
 
+    def at_post_move(self, source_location, move_type="move", **kwargs):
+        """
+        We make sure to look around after a move.
+
+        """
+        # Same logic as parent DefaultCharacter, but
+        # pass in the kwargs for proper multi-session handling
+        if self.location.access(self, "view"):
+            self.msg(text=(self.at_look(self.location, **kwargs), {"type": "look"}))
+
+    def at_post_puppet(self, **kwargs):
+        """
+        Called just after puppeting has been completed and all
+        Account<->Object links have been established.
+
+        Args:
+            **kwargs (dict): Arbitrary, optional arguments for users
+                overriding the call
+        Notes:
+
+            You can use the session argument from kwargs to get the
+            session when executed from a command.
+
+            Otherwise, you can use `self.account` and `self.sessions.get()` to get
+            account and sessions at this point; the last entry in the
+            list from `self.sessions.get()` is the latest Session
+            puppeting this Object.
+
+        """
+        self.msg(_("\nYou become |c{name}|n.\n").format(name=self.key))
+        self.msg((self.at_look(self.location, **kwargs), {"type": "look"}), options=None)
+
+        def message(obj, from_obj):
+            obj.msg(
+                _("{name} has entered the game.").format(name=self.get_display_name(obj)),
+                from_obj=from_obj,
+            )
+
+        self.location.for_contents(message, exclude=[self], from_obj=self)
+
     def get_display_name(self, looker=None, **kwargs):
         """
         Displays the name of the object in a viewer-aware manner.

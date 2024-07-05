@@ -6,9 +6,39 @@ set and has a single command defined on itself with the same name as its key,
 for allowing Characters to traverse the exit to its destination.
 
 """
-from evennia.objects.objects import DefaultExit
+from evennia.objects.objects import DefaultExit, ExitCommand as DefaultExitCommand, SIGNAL_EXIT_TRAVERSED
 
 from .objects import ObjectParent
+
+
+class ExitCommand(DefaultExitCommand):
+    """
+    Default Exit command, used by the base exit object.
+
+    This is a command that simply cause the caller to traverse
+    the object it is attached to.
+
+    """
+
+    def func(self):
+        """
+        Default exit traverse if no syscommand is defined.
+        """
+
+        # Same logic as default Evennia ExitCommand, except we pass in the
+        # session info so that we can use client width information
+        if self.obj.access(self.caller, "traverse"):
+            # we may traverse the exit.
+            self.obj.at_traverse(self.caller, self.obj.destination, session=self.session)
+            SIGNAL_EXIT_TRAVERSED.send(sender=self.obj, traverser=self.caller, session=self.session)
+        else:
+            # exit is locked
+            if self.obj.db.err_traverse:
+                # if exit has a better error message, let's use it.
+                self.caller.msg(self.obj.db.err_traverse)
+            else:
+                # No shorthand error message. Call hook.
+                self.obj.at_failed_traverse(self.caller)
 
 
 class Exit(ObjectParent, DefaultExit):
@@ -36,6 +66,7 @@ class Exit(ObjectParent, DefaultExit):
                                         not be called if the attribute `err_traverse` is
                                         defined, in which case that will simply be echoed.
     """
+    exit_command = ExitCommand
 
     def get_display_name(self, looker=None, **kwargs):
         # helper to create a clickable link
@@ -53,3 +84,26 @@ class Exit(ObjectParent, DefaultExit):
         else:
             return name_link
 
+
+    def at_traverse(self, traversing_object, target_location, **kwargs):
+        """
+        This implements the actual traversal. The traverse lock has
+        already been checked (in the Exit command) at this point.
+
+        Args:
+            traversing_object (DefaultObject): Object traversing us.
+            target_location (DefaultObject): Where target is going.
+            **kwargs (dict): Arbitrary, optional arguments for users
+                overriding the call (unused by default).
+
+        """
+        source_location = traversing_object.location
+        if traversing_object.move_to(target_location, move_type="traverse", exit_obj=self, **kwargs):
+            self.at_post_traverse(traversing_object, source_location, **kwargs)
+        else:
+            if self.db.err_traverse:
+                # if exit has a better error message, let's use it.
+                traversing_object.msg(self.db.err_traverse)
+            else:
+                # No shorthand error message. Call hook.
+                self.at_failed_traverse(traversing_object, **kwargs)

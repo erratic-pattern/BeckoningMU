@@ -10,7 +10,25 @@ from evennia.objects.objects import DefaultRoom
 from evennia.utils.ansi import ANSIString
 from evennia.utils.evtable import EvTable
 from .objects import ObjectParent
+from django.conf import settings
 
+
+def _get_client_width(looker, session=None):
+    """
+    Discover the looker's client width by using the session, if provided.
+
+    If no session is provided, will use the most recently attached session on
+    the looker.
+
+    If no session is found on the looker, will use the DEFAULT_CLIENT_WIDTH
+    from settings
+    """
+    if session is None and looker is not None and looker.sessions.count():
+        session = looker.sessions.all()[-1]
+    if session is not None:
+        return min(settings.CLIENT_DEFAULT_WIDTH, session.get_client_size()[0])
+    else:
+        return settings.CLIENT_DEFAULT_WIDTH
 
 class Room(ObjectParent, DefaultRoom):
     """
@@ -105,12 +123,12 @@ class Room(ObjectParent, DefaultRoom):
         """
         return [exit for exit in self.contents if exit.destination]
 
-    def get_display_footer(self, looker, **kwargs):
+    def get_display_footer(self, looker, session=None, **kwargs):
         """
         Get the 'footer' of the room description. Called by `return_appearance`.
         """
         styles = self.styles["footer"]
-        width = looker.get_min_client_width()
+        width = _get_client_width(looker, session)
         return styles["fill_char"] * width
 
     def format_header(self, looker, header, **kwargs):
@@ -125,16 +143,17 @@ class Room(ObjectParent, DefaultRoom):
     # The values are the text to display when the tag is present on the room
     display_tag_mapping = {"ooc": "OOC Area", "chargen": "CG"}
 
-    def format_title(self, looker, name, extra_name_info, tags, **kwargs):
+    def format_title(self, looker, name, extra_name_info, tags, session=None, **kwargs):
         """
         Applies extra formatting to the rooms title string.
         The title includes the name, displayed tags, and extra name info such as dbrefs for builders
         """
-        tags = "".join(f"|w[{self.display_tag_mapping[tag] or tag}]|n" for tag in tags)
+        tags = "".join(
+            f"|w[{self.display_tag_mapping[tag] or tag}]|n" for tag in tags)
         tags = f"{tags} " if tags else ""
         title = f"|Y[|n {tags}|w{name}|w{extra_name_info} |Y]|n"
         styles = self.styles["title"]
-        width = looker.get_min_client_width()
+        width = _get_client_width(looker, session)
         return ANSIString(title).center(width, styles["fill_char"])
 
     def format_desc(self, looker, desc, **kwargs):
@@ -143,13 +162,13 @@ class Room(ObjectParent, DefaultRoom):
         """
         return desc
 
-    def format_exit_section(self, looker, exits, **kwargs):
+    def format_exit_section(self, looker, exits, session=None, **kwargs):
         """
         Returns how the exits of a room should be displayed when viewed from inside the room.
         """
         if not exits:
             return ""
-        width = looker.get_min_client_width()
+        width = _get_client_width(looker, session)
         table = EvTable(
             width=width,
             **{
@@ -170,7 +189,7 @@ class Room(ObjectParent, DefaultRoom):
         ]
         for i in range(0, len(exits), self.exits_per_row):
             table.add_row(
-                *exits[i : i + self.exits_per_row],
+                *exits[i: i + self.exits_per_row],
                 **{
                     **self.styles["section_contents"],
                     **self.styles["exit_section_contents"],
@@ -178,13 +197,13 @@ class Room(ObjectParent, DefaultRoom):
             )
         return ANSIString("\n").join(table.get())
 
-    def format_character_section(self, looker, characters, **kwargs):
+    def format_character_section(self, looker, characters, session=None, **kwargs):
         """
         Returns how the characters inside a room should be displayed when viewed from inside the room.
         """
         if not characters:
             return ""
-        width = looker.get_min_client_width()
+        width = _get_client_width(looker, session)
         table = EvTable(
             width=width,
             **{
@@ -231,8 +250,7 @@ class Room(ObjectParent, DefaultRoom):
         This is the hook for returning the appearance of the room.
         """
         header = self.format_header(
-            looker, self.get_display_header(looker, **kwargs), **kwargs
-        )
+            looker, self.get_display_header(looker, **kwargs), **kwargs)
 
         name = self.get_display_name(looker, **kwargs)
 
@@ -240,19 +258,17 @@ class Room(ObjectParent, DefaultRoom):
 
         tags = self.get_display_tags(looker, **kwargs)
 
-        title = self.format_title(looker, name, extra_name_info, tags, **kwargs)
+        title = self.format_title(
+            looker, name, extra_name_info, tags, **kwargs)
 
         desc = self.format_desc(
-            looker, self.get_display_desc(looker, **kwargs), **kwargs
-        )
+            looker, self.get_display_desc(looker, **kwargs), **kwargs)
 
         character_section = self.format_character_section(
-            looker, self.get_display_characters(looker, **kwargs), **kwargs
-        )
+            looker, self.get_display_characters(looker, **kwargs), **kwargs)
 
         exit_section = self.format_exit_section(
-            looker, self.get_display_exits(looker, **kwargs), **kwargs
-        )
+            looker, self.get_display_exits(looker, **kwargs), **kwargs)
 
         footer = self.format_footer(
             looker,
